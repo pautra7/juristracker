@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JurisTracker | 2025-2026 Cycle</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="sticky-header">
+        <div class="brand-wrapper" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+            <div class="brand-icon">J</div>
+            <div class="brand-text">
+                <span class="brand-main">JURISTRACKER</span>
+                <span class="brand-sub">ADMISSIONS CYCLE</span>
+            </div>
+        </div>
+
+        <nav class="nav-actions">
+            <a href="#schools" class="nav-btn" onclick="smoothScrollTo(event, 'schools')">Schools</a>
+            <a href="#status-graphic" class="nav-btn" onclick="smoothScrollTo(event, 'status-graphic')">Status</a>
+            <a href="#scholarships" class="nav-btn" onclick="smoothScrollTo(event, 'scholarships')">Scholarships</a>
+            <button class="nav-btn primary" onclick="openModal('addSchoolModal')">Add School <i class="fas fa-plus"></i></button>
+            <button class="nav-btn primary" onclick="openModal('scholarshipModal')">Add Scholarship <i class="fas fa-dollar-sign"></i></button>
+        </nav>
+    </div>
+
+    <div class="hero-section">
+        <i class="fas fa-scale-balanced scales-bg"></i>
+        <div class="hero-graphic-line"></div>
+
+        <div class="hero-content">
+            <div class="cycle-badge">2025 - 2026 Cycle</div>
+            <h1>Law School</h1>
+            <h2>Admissions Tracker</h2>
+            <p class="hero-desc">
+                A comprehensive dashboard tracking applications, decisions, scholarships, and outcomes for the Juris Doctor application cycle.
+            </p>
+            <div class="scroll-indicator" onclick="smoothScrollTo(event, 'schools')">
+                <i class="fas fa-arrow-down"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="main-container">
+        <h3 class="section-title" id="schools">Target Schools</h3>
+        <div class="school-grid" id="app-root"></div>
+
+        <div class="status-graphic-wrapper" id="status-graphic">
+            <div class="status-card">
+                <div class="status-header">
+                    <h3>Application Status</h3>
+                </div>
+                <div class="status-icons-row" id="status-counts-root"></div>
+                <div class="status-bar-container" id="status-bar-root"></div>
+            </div>
+        </div>
+
+        <div class="scholarship-wrapper" id="scholarships">
+            <div class="scholarship-card">
+                <div class="scholarship-header">
+                    <h2 class="scholarship-title">Scholarship Secured</h2>
+                    <p class="scholarship-subtitle">Comparison of your final cost vs. full tuition.</p>
+                </div>
+                <i class="fas fa-dollar-sign dollar-icon"></i>
+                <div id="scholarship-list-root"></div>
+                <div class="total-scholarship">
+                    <i class="fas fa-arrow-trend-up"></i>
+                    <span>Total Scholarship: <span class="total-scholarship-value" id="total-value-display">$0</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Generated via Google AI Studio</p>
+        <span class="reset-link" onclick="resetAllData()">Reset to Default Data</span>
+    </footer>
+
+    <div class="modal-overlay" id="addSchoolModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New School</h3>
+                <button class="close-modal" onclick="closeModal('addSchoolModal')">&times;</button>
+            </div>
+            <form onsubmit="handleAddSchoolSubmit(event)">
+                <div class="form-group"><label>School Name</label><input type="text" id="inpName" required placeholder="e.g. Yale Law School"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Rank (#)</label><input type="text" id="inpRank" required placeholder="#1"></div>
+                    <div class="form-group"><label>Website Domain</label><input type="text" id="inpDomain" required placeholder="yale.edu"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Campus Image URL</label><input type="text" id="inpImage" placeholder="https://..."></div>
+                    <div class="form-group"><label>Logo URL (Optional)</label><input type="text" id="inpLogo" placeholder="https://..."></div>
+                </div>
+                <h4 style="margin: 25px 0 15px; color:var(--text-main); font-family:'Inter',sans-serif; font-weight:700;">Statistics</h4>
+                <div class="form-row">
+                    <div class="form-group"><label>Tuition</label><input type="text" id="inpTuition" required placeholder="$70,000"></div>
+                    <div class="form-group"><label>Scholarship</label><input type="text" id="inpScholarship" required placeholder="$20,000"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Est. Living</label><input type="text" id="inpCol" required placeholder="$20,000"></div>
+                    <div class="form-group"><label>Median Earn.</label><input type="text" id="inpEarnings" required placeholder="$190,000"></div>
+                </div>
+                <button type="submit" class="submit-btn">Save School</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editSchoolModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit School</h3>
+                <button class="close-modal" onclick="closeModal('editSchoolModal')">&times;</button>
+            </div>
+            <form onsubmit="handleEditSchoolSubmit(event)">
+                <input type="hidden" id="editIndex">
+                <div class="form-group"><label>School Name</label><input type="text" id="editName" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Rank (#)</label><input type="text" id="editRank" required></div>
+                    <div class="form-group"><label>Website Domain</label><input type="text" id="editDomain" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Campus Image URL</label><input type="text" id="editImage"></div>
+                    <div class="form-group"><label>Logo URL (Optional)</label><input type="text" id="editLogo"></div>
+                </div>
+                <h4 style="margin: 25px 0 15px; color:var(--text-main); font-family:'Inter',sans-serif; font-weight:700;">Statistics</h4>
+                <div class="form-row">
+                    <div class="form-group"><label>Tuition</label><input type="text" id="editTuition" required></div>
+                    <div class="form-group"><label>Scholarship</label><input type="text" id="editScholarship" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Est. Living</label><input type="text" id="editCol" required></div>
+                    <div class="form-group"><label>Median Earn.</label><input type="text" id="editEarnings" required></div>
+                </div>
+                <button type="submit" class="submit-btn">Update School</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="scholarshipModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add to Scholarship Graph</h3>
+                <button class="close-modal" onclick="closeModal('scholarshipModal')">&times;</button>
+            </div>
+            <form onsubmit="handleScholarshipSubmit(event)">
+                <div class="form-group">
+                    <label>Select Existing School</label>
+                    <select id="existingSchoolSelect" onchange="autoFillScholarship()">
+                        <option value="">-- Choose School --</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Abbreviation</label><input type="text" id="scholAbbr" placeholder="ABC" required></div>
+                    <div class="form-group"><label>Total Tuition</label><input type="text" id="scholTotal" placeholder="$0" readonly style="background:#eee; cursor:not-allowed;"></div>
+                </div>
+                <div class="form-group"><label>Amount You Pay</label><input type="text" id="scholPay" placeholder="$10,000" required oninput="calculateSavingsPreview()"></div>
+                <div class="form-group"><label>Calculated Savings</label><input type="text" id="scholSaved" placeholder="-$0 SAVED" readonly style="color:var(--scholarship-green); font-weight:bold;"></div>
+                <button type="submit" class="submit-btn">Add to Graph</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
