@@ -453,3 +453,20 @@ loadData();
 renderSchools();
 renderStatusGraphic();
 renderScholarships();
+
+// --- EXPORT FUNCTION (Run this to update your code) ---
+function copyDataForCode() {
+    // 1. Convert the current schools array to a JSON string
+    const schoolsJSON = JSON.stringify(schools, null, 4);
+    
+    // 2. Create the full string formatted for JavaScript
+    const codeToCopy = `const defaultSchools = ${schoolsJSON};`;
+    
+    // 3. Copy to clipboard
+    navigator.clipboard.writeText(codeToCopy).then(() => {
+        alert("Data copied to clipboard! \n\nNow open your 'script.js' file and PASTE this over the 'const defaultSchools' section.");
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+        alert("Failed to copy. Check console for details.");
+    });
+}
