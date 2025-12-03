@@ -1,0 +1,343 @@
+// --- DEFAULT DATA (This is used if you reset) ---
+const defaultSchools = [
+    {
+        name: "University of Michigan",
+        rank: "#10",
+        domain: "umich.edu",
+        status: "Pending",
+        logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Seal_of_the_University_of_Michigan.svg/1200px-Seal_of_the_University_of_Michigan.svg.png",
+        image: "https://www.lib.umich.edu/static/f7ffa2d7bc8b7d2c2e56eaf08f237c8b/057ba/AerialsNov08(186)Stock-a.jpg",
+        stats: { tuition: "$71,000", scholarship: "$25,000", col: "$22,000", earnings: "$190,000" }
+    },
+    // ... (Keep other default schools if you wish to reduce file size, I removed the rest for brevity in this answer but you can paste them back from previous code)
+];
+
+// Initial minimalistic defaults if reset
+const defaultScholarships = [
+    { abbr: "W&L", saved: "-$43,000 SAVED", pay: "$13,000", total: "$56,000", percent: 23.2 },
+    { abbr: "MSU", saved: "-$41,000 SAVED", pay: "$0", total: "$41,000", percent: 0 }
+];
+
+let schools = [];
+let scholarshipData = [];
+
+// --- INITIALIZE & LOAD ---
+function loadData() {
+    const savedSchools = localStorage.getItem('juris_schools');
+    const savedScholarships = localStorage.getItem('juris_scholarships');
+
+    if (savedSchools) {
+        schools = JSON.parse(savedSchools);
+    } else {
+        schools = JSON.parse(JSON.stringify(defaultSchools));
+        sortSchools();
+    }
+
+    if (savedScholarships) {
+        scholarshipData = JSON.parse(savedScholarships);
+    } else {
+        scholarshipData = JSON.parse(JSON.stringify(defaultScholarships));
+    }
+}
+
+// --- SAVE TO BROWSER MEMORY ---
+function saveData() {
+    localStorage.setItem('juris_schools', JSON.stringify(schools));
+    localStorage.setItem('juris_scholarships', JSON.stringify(scholarshipData));
+}
+
+// --- RESET LOGIC ---
+function resetAllData() {
+    if (confirm("Are you sure you want to reset everything?")) {
+        localStorage.removeItem('juris_schools');
+        localStorage.removeItem('juris_scholarships');
+        location.reload();
+    }
+}
+
+function sortSchools() {
+    schools.sort((a, b) => {
+        const rankA = parseInt(a.rank.replace(/[^0-9]/g, '')) || 999;
+        const rankB = parseInt(b.rank.replace(/[^0-9]/g, '')) || 999;
+        return rankA - rankB;
+    });
+}
+
+function smoothScrollTo(e, targetId) {
+    e.preventDefault();
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    
+    // Calculate position to account for fixed header + padding
+    const headerOffset = 110; 
+    const elementPosition = target.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+    window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+    });
+}
+
+// --- RENDER FUNCTIONS ---
+function renderSchools() {
+    const grid = document.getElementById('app-root');
+    grid.innerHTML = '';
+
+    schools.forEach((school, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        // Prioritize manual logo, then fallback to clearbit
+        const logoUrl = school.logo ? school.logo : `https://logo.clearbit.com/${school.domain}`;
+
+        let statusClass = 'pending';
+        if (school.status === 'Accepted') statusClass = 'accepted';
+        if (school.status === 'Other') statusClass = 'other';
+
+        card.innerHTML = `
+            <div class="card-hero">
+                <img src="${school.image}" alt="${school.name}" class="card-image" onerror="this.src='https://placehold.co/600x400/333/666?text=Image'">
+                <div class="hero-overlay"></div>
+                <div class="rank-pill">${school.rank}</div>
+                <button class="menu-btn" onclick="toggleMenu(event, ${index})"><i class="fas fa-ellipsis-v"></i></button>
+                <div class="menu-dropdown" id="menu-${index}">
+                    <div class="menu-label">Status</div>
+                    <div class="menu-item" onclick="updateStatus(${index}, 'Accepted')"><i class="fas fa-check-circle" style="color:var(--success-green)"></i> Mark Accepted</div>
+                    <div class="menu-item" onclick="updateStatus(${index}, 'Pending')"><i class="fas fa-clock" style="color:var(--pending-grey)"></i> Mark Pending</div>
+                    <div class="menu-item" onclick="updateStatus(${index}, 'Other')"><i class="fas fa-times-circle" style="color:var(--danger-red)"></i> Mark Other</div>
+                    <div class="menu-label">Actions</div>
+                    <div class="menu-item" onclick="openEditModal(${index})"><i class="fas fa-edit"></i> Edit School</div>
+                    <div class="menu-item delete" onclick="deleteSchool(${index})"><i class="fas fa-trash-alt"></i> Remove School</div>
+                </div>
+                <div class="hero-header">
+                    <div class="logo-box"><img src="${logoUrl}" alt="Logo" class="logo-img" onerror="this.style.opacity=0.3"></div>
+                    <div class="text-group">
+                        <div class="school-title">${school.name}</div>
+                        <div class="school-loc"><i class="fas fa-map-marker-alt"></i> Law School</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="status-badge-container"><span class="status-pill ${statusClass}">${school.status}</span></div>
+                <div class="stats-grid-new">
+                    <div class="stat-box"><div class="sb-label"><i class="fas fa-money-bill-wave"></i> Tuition</div><div class="sb-value">${school.stats.tuition}</div></div>
+                    <div class="stat-box"><div class="sb-label"><i class="fas fa-home"></i> Living</div><div class="sb-value">${school.stats.col}</div></div>
+                    <div class="stat-box wide"><div class="sb-label"><i class="fas fa-briefcase"></i> Median Earnings</div><div class="sb-value">${school.stats.earnings}</div></div>
+                </div>
+                <a href="https://${school.domain}" target="_blank" class="visit-btn-pill">Visit Law School <i class="fas fa-external-link-alt"></i></a>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function renderStatusGraphic() {
+    let accepted = 0, pending = 0, other = 0;
+    schools.forEach(s => {
+        if (s.status === 'Accepted') accepted++;
+        else if (s.status === 'Other') other++;
+        else pending++;
+    });
+    const total = schools.length;
+
+    document.getElementById('status-counts-root').innerHTML = `
+        <div class="status-col"><div class="status-circle accepted"><i class="fas fa-check"></i></div><div class="status-count" style="color:var(--success-green)">${accepted}</div><div class="status-label">Accepted</div></div>
+        <div class="status-col"><div class="status-circle pending"><i class="fas fa-clock"></i></div><div class="status-count" style="color:var(--pending-grey)">${pending}</div><div class="status-label">Pending</div></div>
+        <div class="status-col"><div class="status-circle other"><i class="fas fa-times"></i></div><div class="status-count" style="color:var(--danger-red)">${other}</div><div class="status-label">Other</div></div>
+    `;
+
+    const barRoot = document.getElementById('status-bar-root');
+    if (total === 0) {
+        barRoot.innerHTML = '<div style="width:100%; background:#eee;"></div>';
+    } else {
+        barRoot.innerHTML = `
+            <div class="sb-segment sb-green" style="width:${(accepted/total)*100}%"></div>
+            <div class="sb-segment sb-grey" style="width:${(pending/total)*100}%"></div>
+            <div class="sb-segment sb-red" style="width:${(other/total)*100}%"></div>
+        `;
+    }
+}
+
+function renderScholarships() {
+    const listRoot = document.getElementById('scholarship-list-root');
+    listRoot.innerHTML = '';
+    let totalSavedValue = 0;
+    scholarshipData.forEach(item => {
+        const savedNum = parseInt(item.saved.replace(/[^0-9]/g, '')) || 0;
+        totalSavedValue += savedNum;
+        const row = document.createElement('div');
+        row.className = 'scholarship-item';
+        row.innerHTML = `
+            <div class="item-header"><span class="school-abbr">${item.abbr}</span><span class="saved-amount">${item.saved}</span></div>
+            <div class="progress-bar-container"><div class="progress-bar" style="--target-width: ${item.percent}%;"></div></div>
+            <div class="cost-labels"><span>Pay: ${item.pay}</span><span>Total: ${item.total}</span></div>
+        `;
+        listRoot.appendChild(row);
+    });
+    document.getElementById('total-value-display').innerText = '$' + totalSavedValue.toLocaleString();
+}
+
+// --- ACTIONS ---
+function toggleMenu(e, index) {
+    e.stopPropagation();
+    document.querySelectorAll('.menu-dropdown').forEach(el => el.classList.remove('show'));
+    const menu = document.getElementById(`menu-${index}`);
+    if (menu) menu.classList.toggle('show');
+}
+document.addEventListener('click', () => { document.querySelectorAll('.menu-dropdown').forEach(el => el.classList.remove('show')); });
+
+function updateStatus(index, newStatus) {
+    schools[index].status = newStatus;
+    saveData();
+    renderSchools();
+    renderStatusGraphic();
+}
+
+function deleteSchool(index) {
+    if (confirm("Remove " + schools[index].name + "?")) {
+        schools.splice(index, 1);
+        saveData();
+        renderSchools();
+        renderStatusGraphic();
+    }
+}
+
+// --- MODALS ---
+function openModal(id) {
+    const modal = document.getElementById(id);
+    modal.style.display = 'flex';
+    modal.offsetHeight; // Trigger reflow
+    modal.classList.add('active');
+    if (id === 'scholarshipModal') populateScholarshipDropdown();
+}
+
+function closeModal(id) {
+    const modal = document.getElementById(id);
+    modal.classList.remove('active');
+    setTimeout(() => { modal.style.display = 'none'; }, 300);
+}
+
+function handleAddSchoolSubmit(e) {
+    e.preventDefault();
+    const newSchool = {
+        name: document.getElementById('inpName').value,
+        rank: document.getElementById('inpRank').value,
+        domain: document.getElementById('inpDomain').value,
+        status: "Pending",
+        image: document.getElementById('inpImage').value || 'https://placehold.co/600x400/333/666?text=Image',
+        logo: document.getElementById('inpLogo').value,
+        stats: {
+            tuition: document.getElementById('inpTuition').value,
+            scholarship: document.getElementById('inpScholarship').value,
+            col: document.getElementById('inpCol').value,
+            earnings: document.getElementById('inpEarnings').value
+        }
+    };
+    schools.push(newSchool);
+    sortSchools();
+    saveData();
+    renderSchools();
+    renderStatusGraphic();
+    closeModal('addSchoolModal');
+    e.target.reset();
+}
+
+// --- EDIT SCHOOL LOGIC ---
+function openEditModal(index) {
+    const school = schools[index];
+    document.getElementById('editIndex').value = index;
+    document.getElementById('editName').value = school.name;
+    document.getElementById('editRank').value = school.rank;
+    document.getElementById('editDomain').value = school.domain;
+    document.getElementById('editImage').value = school.image;
+    document.getElementById('editLogo').value = school.logo || "";
+    document.getElementById('editTuition').value = school.stats.tuition;
+    document.getElementById('editScholarship').value = school.stats.scholarship;
+    document.getElementById('editCol').value = school.stats.col;
+    document.getElementById('editEarnings').value = school.stats.earnings;
+    openModal('editSchoolModal');
+}
+
+function handleEditSchoolSubmit(e) {
+    e.preventDefault();
+    const index = document.getElementById('editIndex').value;
+    schools[index].name = document.getElementById('editName').value;
+    schools[index].rank = document.getElementById('editRank').value;
+    schools[index].domain = document.getElementById('editDomain').value;
+    schools[index].image = document.getElementById('editImage').value;
+    schools[index].logo = document.getElementById('editLogo').value;
+    schools[index].stats.tuition = document.getElementById('editTuition').value;
+    schools[index].stats.scholarship = document.getElementById('editScholarship').value;
+    schools[index].stats.col = document.getElementById('editCol').value;
+    schools[index].stats.earnings = document.getElementById('editEarnings').value;
+    
+    sortSchools();
+    saveData();
+    renderSchools();
+    renderStatusGraphic();
+    closeModal('editSchoolModal');
+}
+
+function populateScholarshipDropdown() {
+    const select = document.getElementById('existingSchoolSelect');
+    select.innerHTML = '<option value="">-- Choose School --</option>';
+    schools.forEach((s, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = s.name;
+        select.appendChild(opt);
+    });
+}
+
+function autoFillScholarship() {
+    const idx = document.getElementById('existingSchoolSelect').value;
+    if (idx === "") return;
+    const school = schools[idx];
+    const abbr = school.name.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 4);
+    document.getElementById('scholAbbr').value = abbr;
+    document.getElementById('scholTotal').value = school.stats.tuition;
+    calculateSavingsPreview();
+}
+
+function calculateSavingsPreview() {
+    const payStr = document.getElementById('scholPay').value;
+    const totalStr = document.getElementById('scholTotal').value;
+    const payNum = parseFloat(payStr.replace(/[^0-9.]/g, '')) || 0;
+    const totalNum = parseFloat(totalStr.replace(/[^0-9.]/g, '')) || 0;
+    const saved = totalNum - payNum;
+    if (saved > 0) document.getElementById('scholSaved').value = `-$${saved.toLocaleString()} SAVED`;
+    else document.getElementById('scholSaved').value = "$0 SAVED";
+}
+
+function handleScholarshipSubmit(e) {
+    e.preventDefault();
+    const payStr = document.getElementById('scholPay').value;
+    const totalStr = document.getElementById('scholTotal').value;
+    const savedStr = document.getElementById('scholSaved').value;
+    const payNum = parseFloat(payStr.replace(/[^0-9.]/g, '')) || 0;
+    const totalNum = parseFloat(totalStr.replace(/[^0-9.]/g, '')) || 1;
+    let percent = (payNum / totalNum) * 100;
+    if (percent > 100) percent = 100;
+
+    scholarshipData.push({
+        abbr: document.getElementById('scholAbbr').value.toUpperCase(),
+        saved: savedStr,
+        pay: payStr,
+        total: totalStr,
+        percent: percent.toFixed(1)
+    });
+    saveData();
+    renderScholarships();
+    closeModal('scholarshipModal');
+    e.target.reset();
+}
+
+// --- Phase 2: Host Your App (The "No File Playing" Solution) ---
+// Since you cannot write to disk from a browser, the industry standard is to separate the data from the code.
+// However, since we are doing this client-side:
+
+// INITIAL LOAD
+loadData();
+renderSchools();
+renderStatusGraphic();
+renderScholarships();
