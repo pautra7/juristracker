@@ -80,7 +80,16 @@
 
     <footer>
         <p>Generated via Google AI Studio</p>
-        <span class="reset-link" onclick="resetAllData()">Reset to Default Data</span>
+        
+        <div class="footer-actions">
+            <button class="footer-btn save" onclick="copyDataForCode()">
+                <i class="fas fa-code"></i> Copy Data for GitHub
+            </button>
+            
+            <button class="footer-btn reset" onclick="resetAllData()">
+                <i class="fas fa-rotate-left"></i> Reset to Default
+            </button>
+        </div>
     </footer>
 
     <div class="modal-overlay" id="addSchoolModal">
